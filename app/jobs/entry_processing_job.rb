@@ -41,7 +41,7 @@ class EntryProcessingJob < ApplicationJob
   private
 
   def generate_summary(entry)
-    chat = RubyLLM.chat(model: "gpt-4.1-mini")
+    chat = RubyLLM.chat(model: "gpt-4.1-mini", assume_model_exists: true)
     response = chat.ask(<<~PROMPT)
       Summarize this developer #{entry.entry_type.humanize.downcase} in 1-2 concise sentences.
       Focus on the key technical insight or solution.
@@ -54,7 +54,7 @@ class EntryProcessingJob < ApplicationJob
   end
 
   def generate_tags(entry)
-    chat = RubyLLM.chat(model: "gpt-4.1-mini")
+    chat = RubyLLM.chat(model: "gpt-4.1-mini", assume_model_exists: true)
     response = chat.ask(<<~PROMPT)
       Generate 3-7 relevant tags for this developer #{entry.entry_type.humanize.downcase}.
       Return ONLY a comma-separated list of lowercase tags. No explanations.
@@ -80,7 +80,7 @@ class EntryProcessingJob < ApplicationJob
 
   def generate_embedding(entry)
     text = "#{entry.title}\n#{entry.content}\n#{entry.ai_summary}"
-    result = RubyLLM.embed(text.truncate(8000), model: "text-embedding-3-small")
+    result = RubyLLM.embed(text.truncate(8000), model: "text-embedding-3-small", assume_model_exists: true)
     result.vectors
   end
 
