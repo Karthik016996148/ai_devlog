@@ -5,7 +5,17 @@ class SearchController < ApplicationController
 
   def ask
     @chat = Chat.find(params[:chat_id])
-    @question = params[:question]
+    @question = params[:question].to_s.strip
+
+    if @question.blank?
+      @answer = "Please enter a question."
+      @sources = []
+      respond_to do |format|
+        format.turbo_stream
+        format.html { redirect_to search_path, alert: "Please enter a question." }
+      end
+      return
+    end
 
     service = RagSearchService.new(@chat)
     @result = service.ask_sync(@question)
