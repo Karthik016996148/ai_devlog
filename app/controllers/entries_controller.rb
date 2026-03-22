@@ -56,14 +56,27 @@ class EntriesController < ApplicationController
 
   def reprocess
     @entry.update!(processing_status: :pending)
-    EntryProcessingJob.perform_later(@entry.id)
+    EntryProcessingJob.perform_now(@entry.id)
+    @entry.reload
     respond_to do |format|
-      format.html { redirect_to @entry, notice: "Re-processing started." }
+      format.html { redirect_to @entry, notice: "Processing complete!" }
       format.turbo_stream {
         render turbo_stream: turbo_stream.replace(
           "entry_#{@entry.id}_status",
           partial: "entries/processing_status",
-          locals: { entry: @entry, status: "processing", message: "Re-processing started..." }
+          locals: { entry: @entry, status: @entry.processing_status, message: nil }
+        )
+      }
+    end
+  rescue => e
+    @entry.reload
+    respond_to do |format|
+      format.html { redirect_to @entry, alert: "Processing failed: #{e.message}" }
+      format.turbo_stream {
+        render turbo_stream: turbo_stream.replace(
+          "entry_#{@entry.id}_status",
+          partial: "entries/processing_status",
+          locals: { entry: @entry, status: "failed", message: "Failed: #{e.message}" }
         )
       }
     end

@@ -104,7 +104,7 @@ class RagSearchService
   end
 
   def keyword_search(question)
-    text_matches = Entry.keyword_search(question).limit(5).to_a
+    text_matches = Entry.processed.keyword_search(question).limit(5).to_a
     text_matches = text_matches.select do |e|
       e.respond_to?(:keyword_relevance) && e.keyword_relevance.to_i >= MIN_KEYWORD_RELEVANCE
     end
@@ -116,7 +116,7 @@ class RagSearchService
   def tag_search(question)
     keywords = question.strip.split(/\s+/).map { |w| w.downcase.gsub(/[^a-z0-9\-]/, "") }.reject(&:blank?)
     return [] if keywords.empty?
-    Entry.joins(:tags).where("tags.name IN (?)", keywords).distinct.limit(3).to_a
+    Entry.processed.joins(:tags).where("tags.name IN (?)", keywords).distinct.limit(3).to_a
   end
 
   def merge_results(vector_results, keyword_results)
@@ -134,12 +134,11 @@ class RagSearchService
   end
 
   def filter_cited_sources(answer, entries)
-    return entries if answer.include?("No matching entries found")
+    return [] if answer.include?("No matching entries found")
 
+    answer_down = answer.downcase
     cited = entries.select do |entry|
-      title_words = entry.title.split(/\s+/).select { |w| w.length > 3 }
-      answer.include?(entry.title) ||
-        title_words.count { |w| answer.downcase.include?(w.downcase) } >= (title_words.size / 2.0).ceil
+      answer_down.include?(entry.title.downcase)
     end
 
     cited.any? ? cited : entries.first(1)
