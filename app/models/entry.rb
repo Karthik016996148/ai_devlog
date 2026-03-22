@@ -37,14 +37,22 @@ class Entry < ApplicationRecord
     return none if keywords.empty?
 
     patterns = keywords.map { |w| "%#{sanitize_sql_like(w)}%" }
+    quoted = patterns.map { |p| connection.quote(p) }
+
+    title_scores = quoted.map { |q| "CASE WHEN title ILIKE #{q} THEN 3 ELSE 0 END" }
+    summary_scores = quoted.map { |q| "CASE WHEN ai_summary ILIKE #{q} THEN 2 ELSE 0 END" }
+    content_scores = quoted.map { |q| "CASE WHEN content ILIKE #{q} THEN 1 ELSE 0 END" }
+
+    score_expr = (title_scores + summary_scores + content_scores).join(" + ")
 
     per_word = patterns.map { "(title ILIKE ? OR content ILIKE ? OR ai_summary ILIKE ?)" }
     per_word_binds = patterns.flat_map { |k| [k, k, k] }
 
     strict = where(per_word.join(" AND "), *per_word_binds)
-    return strict if strict.exists?
+    base = strict.exists? ? strict : where(per_word.join(" OR "), *per_word_binds)
 
-    where(per_word.join(" OR "), *per_word_binds)
+    base.select("entries.*, (#{score_expr}) AS keyword_relevance")
+        .order(Arel.sql("keyword_relevance DESC"))
   }
 
   after_create_commit :enqueue_ai_processing

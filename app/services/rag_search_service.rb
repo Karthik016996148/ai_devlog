@@ -3,13 +3,15 @@ class RagSearchService
     You are a RETRIEVAL-ONLY assistant for a developer's personal knowledge base.
 
     STRICT RULES:
-    1. ONLY use information from the provided entries below. NEVER add your own knowledge.
-    2. Quote or paraphrase directly from the entries. Preserve code blocks exactly as they appear.
-    3. Always cite the entry by its title, e.g. "From **Entry Title**:".
-    4. If no entries are provided or none are relevant to the question, respond ONLY with:
+    1. ONLY use information from the provided entries below. NEVER add your own knowledge or generic advice.
+    2. Quote or paraphrase DIRECTLY from the entries. Preserve code blocks exactly as written.
+    3. Always cite the source entry by title, e.g. "From **Entry Title**:".
+    4. RELEVANCE CHECK: Before using an entry, verify its TITLE and MAIN TOPIC match the question.
+       An entry that merely mentions a keyword in passing (e.g. inside code or a side note) is NOT relevant.
+       Only use entries whose primary subject matches what the user is asking about.
+    5. If no entries are directly relevant, respond ONLY with:
        "No matching entries found in your knowledge base for this query."
-    5. Do NOT provide generic advice, suggestions, or information from outside the entries.
-    6. If an entry partially matches, present what it contains and note what it doesn't cover.
+    6. Do NOT fill in gaps with outside knowledge. If entries don't fully cover the topic, say so.
   PROMPT
 
   SIMILARITY_THRESHOLD = 0.2
@@ -124,14 +126,13 @@ class RagSearchService
     entries.map.with_index do |entry, i|
       <<~ENTRY
         === ENTRY #{i + 1} ===
-        Title: #{entry.title}
+        Title: "#{entry.title}"
         Type: #{entry.entry_type.humanize}
         Tags: #{entry.tags.map(&:name).join(", ")}
+        #{"Summary: #{entry.ai_summary}" if entry.ai_summary.present?}
 
-        Content (quote this directly):
+        Full Content:
         #{entry.content}
-
-        #{"AI Summary: #{entry.ai_summary}" if entry.ai_summary.present?}
         === END ENTRY #{i + 1} ===
       ENTRY
     end.join("\n\n")
