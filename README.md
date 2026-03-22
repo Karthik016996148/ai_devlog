@@ -1,6 +1,6 @@
 # AI DevLog
 
-An AI-powered developer knowledge base built with Ruby on Rails. Paste code snippets, error logs, solutions, and notes — AI automatically summarizes, tags, embeds, and finds related entries. Search your knowledge base with natural language using RAG (Retrieval-Augmented Generation).
+An AI-powered developer knowledge base built with Ruby on Rails. Paste code snippets, error logs, solutions, and notes, AI automatically summarizes, tags, embeds, and finds related entries. Search your knowledge base with natural language using RAG (Retrieval-Augmented Generation).
 
 **Live Demo:** [https://ai-devlog.onrender.com](https://ai-devlog.onrender.com)
 
@@ -168,8 +168,6 @@ export OPENAI_API_KEY=your-key-here
 bin/dev
 ```
 
-Visit [http://localhost:3000](http://localhost:3000)
-
 ## Deployment
 
 Deployed on [Render.com](https://render.com) using the included `render.yaml` blueprint:
@@ -182,7 +180,3 @@ Deployed on [Render.com](https://render.com) using the included `render.yaml` bl
 Required environment variables on Render:
 - `OPENAI_API_KEY`
 - `RAILS_MASTER_KEY`
-
-## Author
-
-**Karthik Nimmagadda** — [@Karthik016996148](https://github.com/Karthik016996148)
