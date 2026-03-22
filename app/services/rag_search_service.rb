@@ -10,18 +10,36 @@ class RagSearchService
     @chat = chat
   end
 
-  def ask(question, &on_chunk)
-    # Step 1: Generate embedding for the question
+  def ask_sync(question)
     query_result = RubyLLM.embed(question, model: "text-embedding-3-small")
     query_embedding = query_result.vectors
 
-    # Step 2: Find relevant entries via cosine similarity
     relevant_entries = Entry.processed.search_by_embedding(query_embedding, limit: 5)
 
-    # Step 3: Build context from relevant entries
     context = build_context(relevant_entries)
 
-    # Step 4: Ask LLM with context using streaming
+    llm_chat = RubyLLM.chat(model: "gpt-4.1-mini")
+    llm_chat.with_instructions(<<~INSTRUCTIONS)
+      #{SYSTEM_PROMPT}
+
+      ## Relevant entries from the knowledge base:
+
+      #{context}
+    INSTRUCTIONS
+
+    response = llm_chat.ask(question)
+
+    { response: response.content, sources: relevant_entries }
+  end
+
+  def ask(question, &on_chunk)
+    query_result = RubyLLM.embed(question, model: "text-embedding-3-small")
+    query_embedding = query_result.vectors
+
+    relevant_entries = Entry.processed.search_by_embedding(query_embedding, limit: 5)
+
+    context = build_context(relevant_entries)
+
     llm_chat = RubyLLM.chat(model: "gpt-4.1-mini")
     llm_chat.with_instructions(<<~INSTRUCTIONS)
       #{SYSTEM_PROMPT}
@@ -33,7 +51,6 @@ class RagSearchService
 
     response = llm_chat.ask(question, &on_chunk)
 
-    # Return relevant entries for source attribution
     { response: response, sources: relevant_entries }
   end
 

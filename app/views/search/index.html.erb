@@ -4,8 +4,6 @@
     <p class="text-sm text-gray-500 mt-1">Ask questions about your entries. AI will search relevant entries and generate an answer using RAG.</p>
   </div>
 
-  <%= turbo_stream_from "chat_#{@chat.id}" %>
-
   <!-- Messages -->
   <div id="chat_messages" class="space-y-4 min-h-[200px]">
     <div class="text-center py-8 text-gray-400">
@@ -16,16 +14,10 @@
     </div>
   </div>
 
-  <!-- Thinking Indicator -->
-  <div id="chat_<%= @chat.id %>_thinking"></div>
-
-  <!-- Sources -->
-  <div id="chat_<%= @chat.id %>_sources"></div>
-
   <!-- Question Form -->
   <div class="sticky bottom-6 bg-gray-50 pt-4">
     <%= form_with url: ask_search_path, method: :post,
-          data: { controller: "search-form", action: "submit->search-form#submit" } do |f| %>
+          data: { controller: "search-form", action: "submit->search-form#submit", turbo_submits_with: "Searching..." } do |f| %>
       <%= f.hidden_field :chat_id, value: @chat.id %>
       <div class="flex gap-3">
         <%= f.text_field :question,
@@ -34,8 +26,8 @@
               autocomplete: "off",
               data: { search_form_target: "input" } %>
         <%= f.submit "Ask",
-              class: "inline-flex items-center rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 cursor-pointer",
-              data: { search_form_target: "button" } %>
+              class: "inline-flex items-center rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 cursor-pointer disabled:opacity-50",
+              data: { search_form_target: "button", turbo_submits_with: "Thinking..." } %>
       </div>
     <% end %>
 
