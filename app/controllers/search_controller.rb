@@ -20,7 +20,9 @@ class SearchController < ApplicationController
     service = RagSearchService.new(@chat)
     @result = service.ask_sync(@question)
     @answer = @result[:response]
-    @sources = @result[:sources]
+    @sources = @result[:sources] || []
+
+    @sources = [] if @answer.to_s.downcase.include?("no matching entries found")
 
     respond_to do |format|
       format.turbo_stream
