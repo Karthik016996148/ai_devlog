@@ -10,19 +10,11 @@ class SearchController < ApplicationController
     if @question.blank?
       @answer = "Please enter a question."
       @sources = []
-      respond_to do |format|
-        format.turbo_stream
-        format.html { redirect_to search_path, alert: "Please enter a question." }
-      end
-      return
+    else
+      result = RagSearchService.new(@chat).ask_sync(@question)
+      @answer = result[:response]
+      @sources = result[:sources]
     end
-
-    service = RagSearchService.new(@chat)
-    @result = service.ask_sync(@question)
-    @answer = @result[:response]
-    @sources = @result[:sources] || []
-
-    @sources = [] if @answer.to_s.downcase.include?("no matching entries found")
 
     respond_to do |format|
       format.turbo_stream
