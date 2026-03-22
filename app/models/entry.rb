@@ -31,6 +31,13 @@ class Entry < ApplicationRecord
   scope :tagged_with, ->(tag_name) {
     joins(:tags).where(tags: { name: tag_name })
   }
+  scope :keyword_search, ->(query) {
+    return none if query.blank?
+    keywords = query.strip.split(/\s+/).map { |w| "%#{sanitize_sql_like(w)}%" }
+    conditions = keywords.map { "title ILIKE ? OR content ILIKE ? OR ai_summary ILIKE ?" }
+    binds = keywords.flat_map { |k| [k, k, k] }
+    where(conditions.join(" OR "), *binds)
+  }
 
   after_create_commit :enqueue_ai_processing
 
