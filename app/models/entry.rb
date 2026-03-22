@@ -33,10 +33,18 @@ class Entry < ApplicationRecord
   }
   scope :keyword_search, ->(query) {
     return none if query.blank?
-    keywords = query.strip.split(/\s+/).map { |w| "%#{sanitize_sql_like(w)}%" }
-    conditions = keywords.map { "title ILIKE ? OR content ILIKE ? OR ai_summary ILIKE ?" }
-    binds = keywords.flat_map { |k| [k, k, k] }
-    where(conditions.join(" OR "), *binds)
+    keywords = query.strip.split(/\s+/).reject { |w| w.length < 2 }.uniq
+    return none if keywords.empty?
+
+    patterns = keywords.map { |w| "%#{sanitize_sql_like(w)}%" }
+
+    per_word = patterns.map { "(title ILIKE ? OR content ILIKE ? OR ai_summary ILIKE ?)" }
+    per_word_binds = patterns.flat_map { |k| [k, k, k] }
+
+    strict = where(per_word.join(" AND "), *per_word_binds)
+    return strict if strict.exists?
+
+    where(per_word.join(" OR "), *per_word_binds)
   }
 
   after_create_commit :enqueue_ai_processing

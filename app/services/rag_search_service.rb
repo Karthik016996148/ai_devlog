@@ -1,12 +1,18 @@
 class RagSearchService
   SYSTEM_PROMPT = <<~PROMPT
-    You are a helpful assistant that answers questions based on the developer's personal knowledge base.
-    Use ONLY the provided context entries to answer. If the context doesn't contain relevant information, say so.
-    Reference specific entries when possible. Format code examples with markdown code blocks.
-    Keep answers concise and technical.
+    You are a RETRIEVAL-ONLY assistant for a developer's personal knowledge base.
+
+    STRICT RULES:
+    1. ONLY use information from the provided entries below. NEVER add your own knowledge.
+    2. Quote or paraphrase directly from the entries. Preserve code blocks exactly as they appear.
+    3. Always cite the entry by its title, e.g. "From **Entry Title**:".
+    4. If no entries are provided or none are relevant to the question, respond ONLY with:
+       "No matching entries found in your knowledge base for this query."
+    5. Do NOT provide generic advice, suggestions, or information from outside the entries.
+    6. If an entry partially matches, present what it contains and note what it doesn't cover.
   PROMPT
 
-  SIMILARITY_THRESHOLD = 0.3
+  SIMILARITY_THRESHOLD = 0.2
 
   def initialize(chat)
     @chat = chat
@@ -15,13 +21,20 @@ class RagSearchService
   def ask_sync(question)
     relevant_entries = hybrid_search(question)
 
+    if relevant_entries.empty?
+      return {
+        response: "No matching entries found in your knowledge base for this query.",
+        sources: []
+      }
+    end
+
     context = build_context(relevant_entries)
 
     llm_chat = RubyLLM.chat(model: "gpt-4.1-mini", provider: :openai, assume_model_exists: true)
     llm_chat.with_instructions(<<~INSTRUCTIONS)
       #{SYSTEM_PROMPT}
 
-      ## Relevant entries from the knowledge base:
+      ## Retrieved entries from the knowledge base:
 
       #{context}
     INSTRUCTIONS
@@ -34,13 +47,20 @@ class RagSearchService
   def ask(question, &on_chunk)
     relevant_entries = hybrid_search(question)
 
+    if relevant_entries.empty?
+      return {
+        response: "No matching entries found in your knowledge base for this query.",
+        sources: []
+      }
+    end
+
     context = build_context(relevant_entries)
 
     llm_chat = RubyLLM.chat(model: "gpt-4.1-mini", provider: :openai, assume_model_exists: true)
     llm_chat.with_instructions(<<~INSTRUCTIONS)
       #{SYSTEM_PROMPT}
 
-      ## Relevant entries from the knowledge base:
+      ## Retrieved entries from the knowledge base:
 
       #{context}
     INSTRUCTIONS
@@ -57,7 +77,10 @@ class RagSearchService
     keyword_results = keyword_search(question)
 
     merged = merge_results(vector_results, keyword_results)
-    Entry.where(id: merged.map(&:id)).includes(:tags).index_by(&:id).values_at(*merged.map(&:id))
+    return [] if merged.empty?
+
+    ids = merged.map(&:id)
+    Entry.where(id: ids).includes(:tags).index_by(&:id).values_at(*ids).compact
   end
 
   def vector_search(question)
@@ -72,7 +95,15 @@ class RagSearchService
   end
 
   def keyword_search(question)
-    Entry.keyword_search(question).includes(:tags).limit(5).to_a
+    text_matches = Entry.keyword_search(question).limit(5).to_a
+    tag_matches = tag_search(question)
+    (text_matches + tag_matches).uniq(&:id).first(5)
+  end
+
+  def tag_search(question)
+    keywords = question.strip.split(/\s+/).map { |w| w.downcase.gsub(/[^a-z0-9\-]/, "") }.reject(&:blank?)
+    return [] if keywords.empty?
+    Entry.joins(:tags).where("tags.name IN (?)", keywords).distinct.limit(3).to_a
   end
 
   def merge_results(vector_results, keyword_results)
@@ -90,18 +121,19 @@ class RagSearchService
   end
 
   def build_context(entries)
-    return "No relevant entries found in the knowledge base." if entries.empty?
-
     entries.map.with_index do |entry, i|
       <<~ENTRY
-        ### Entry #{i + 1}: #{entry.title} [#{entry.entry_type.humanize}]
-        #{entry.ai_summary}
-
-        #{entry.content.truncate(1000)}
-
+        === ENTRY #{i + 1} ===
+        Title: #{entry.title}
+        Type: #{entry.entry_type.humanize}
         Tags: #{entry.tags.map(&:name).join(", ")}
-        ---
+
+        Content (quote this directly):
+        #{entry.content}
+
+        #{"AI Summary: #{entry.ai_summary}" if entry.ai_summary.present?}
+        === END ENTRY #{i + 1} ===
       ENTRY
-    end.join("\n")
+    end.join("\n\n")
   end
 end
