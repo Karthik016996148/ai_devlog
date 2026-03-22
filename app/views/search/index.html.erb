@@ -1,0 +1,45 @@
+<div class="max-w-4xl mx-auto space-y-6">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">Ask Your Knowledge Base</h1>
+    <p class="text-sm text-gray-500 mt-1">Ask questions about your entries. AI will search relevant entries and generate an answer using RAG.</p>
+  </div>
+
+  <%= turbo_stream_from "chat_#{@chat.id}" %>
+
+  <!-- Messages -->
+  <div id="chat_messages" class="space-y-4 min-h-[200px]">
+    <div class="text-center py-8 text-gray-400">
+      <svg class="mx-auto h-10 w-10 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+      </svg>
+      <p class="text-sm">Ask a question to search your knowledge base</p>
+    </div>
+  </div>
+
+  <!-- Thinking Indicator -->
+  <div id="chat_<%= @chat.id %>_thinking"></div>
+
+  <!-- Sources -->
+  <div id="chat_<%= @chat.id %>_sources"></div>
+
+  <!-- Question Form -->
+  <div class="sticky bottom-6 bg-gray-50 pt-4">
+    <%= form_with url: ask_search_path, method: :post,
+          data: { controller: "search-form", action: "submit->search-form#submit" } do |f| %>
+      <%= f.hidden_field :chat_id, value: @chat.id %>
+      <div class="flex gap-3">
+        <%= f.text_field :question,
+              placeholder: "e.g., How did I fix the N+1 query issue?",
+              class: "flex-1 rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm",
+              autocomplete: "off",
+              data: { search_form_target: "input" } %>
+        <%= f.submit "Ask",
+              class: "inline-flex items-center rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 cursor-pointer" %>
+      </div>
+    <% end %>
+
+    <div class="text-xs text-gray-400 text-center mt-3">
+      Powered by RAG (Retrieval-Augmented Generation) &mdash; searches your entries using vector similarity, then generates contextual answers.
+    </div>
+  </div>
+</div>

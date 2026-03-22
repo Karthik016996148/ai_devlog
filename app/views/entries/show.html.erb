@@ -1,0 +1,91 @@
+<%= turbo_stream_from "entry_#{@entry.id}_processing" %>
+
+<div class="max-w-4xl mx-auto space-y-6">
+  <!-- Header -->
+  <div class="flex items-start justify-between">
+    <div>
+      <div class="flex items-center gap-2 mb-2">
+        <%= entry_type_badge(@entry.entry_type) %>
+        <span class="text-sm text-gray-500"><%= @entry.created_at.strftime("%B %d, %Y at %I:%M %p") %></span>
+      </div>
+      <h1 class="text-2xl font-bold text-gray-900"><%= @entry.title %></h1>
+    </div>
+    <div class="flex items-center gap-2">
+      <%= link_to "Edit", edit_entry_path(@entry), class: "rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-gray-300 hover:bg-gray-50" %>
+      <%= button_to "Reprocess", reprocess_entry_path(@entry), method: :post, class: "rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-gray-300 hover:bg-gray-50" %>
+      <%= button_to "Delete", entry_path(@entry), method: :delete, data: { turbo_confirm: "Are you sure?" }, class: "rounded-md bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 shadow-sm ring-1 ring-red-200 hover:bg-red-100" %>
+    </div>
+  </div>
+
+  <!-- Processing Status -->
+  <div id="entry_<%= @entry.id %>_status">
+    <%= render "entries/processing_status", entry: @entry, status: @entry.processing_status, message: nil %>
+  </div>
+
+  <!-- AI Summary -->
+  <% if @entry.ai_summary.present? %>
+    <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+      <div class="flex items-center gap-2 mb-1">
+        <svg class="h-4 w-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+        </svg>
+        <h3 class="text-sm font-semibold text-indigo-900">AI Summary</h3>
+      </div>
+      <p class="text-sm text-indigo-800"><%= @entry.ai_summary %></p>
+    </div>
+  <% end %>
+
+  <!-- Content -->
+  <div class="bg-white rounded-lg border border-gray-200 p-6">
+    <div class="prose prose-sm max-w-none" data-controller="copy-code">
+      <%= render_markdown(@entry.content) %>
+    </div>
+  </div>
+
+  <!-- Tags -->
+  <% if @entry.tags.any? %>
+    <div>
+      <h3 class="text-sm font-semibold text-gray-900 mb-2">Tags</h3>
+      <div class="flex flex-wrap gap-2">
+        <% @entry.tags.each do |tag| %>
+          <% is_ai = @entry.entry_tags.find_by(tag: tag)&.ai_generated? %>
+          <%= link_to tag_path(tag.name),
+              class: "inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm #{is_ai ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'} hover:opacity-80 transition-opacity" do %>
+            <%= tag.name %>
+            <% if is_ai %>
+              <span class="text-xs text-purple-500">(AI)</span>
+            <% end %>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Related Entries -->
+  <% if @related_entries.any? %>
+    <div>
+      <h3 class="text-sm font-semibold text-gray-900 mb-3">Related Entries</h3>
+      <div class="space-y-2">
+        <% @related_entries.each do |related| %>
+          <%= link_to entry_path(related), class: "block rounded-lg border border-gray-200 bg-white p-3 hover:bg-gray-50 hover:border-indigo-300 transition-all" do %>
+            <div class="flex items-center gap-2">
+              <%= entry_type_badge(related.entry_type) %>
+              <span class="text-sm font-medium text-gray-900"><%= related.title %></span>
+              <% if related.respond_to?(:similarity_score) && related.similarity_score %>
+                <span class="ml-auto text-xs text-gray-400"><%= (related.similarity_score.to_f * 100).round %>% match</span>
+              <% end %>
+            </div>
+            <% if related.ai_summary.present? %>
+              <p class="text-xs text-gray-500 mt-1 line-clamp-1"><%= related.ai_summary %></p>
+            <% end %>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Back link -->
+  <div class="pt-4 border-t border-gray-200">
+    <%= link_to "\u2190 Back to entries", entries_path, class: "text-sm text-indigo-600 hover:text-indigo-500 font-medium" %>
+  </div>
+</div>

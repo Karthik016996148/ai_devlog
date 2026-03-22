@@ -1,0 +1,31 @@
+<div id="entry_<%= entry.id %>" class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-sm hover:border-indigo-200 transition-all">
+  <div class="flex items-start justify-between">
+    <div class="flex-1 min-w-0">
+      <div class="flex items-center gap-2 mb-1">
+        <%= entry_type_badge(entry.entry_type) %>
+        <span class="text-xs text-gray-500"><%= time_ago_in_words(entry.created_at) %> ago</span>
+      </div>
+      <%= link_to entry_path(entry), class: "block" do %>
+        <h3 class="text-sm font-semibold text-gray-900 truncate hover:text-indigo-600 transition-colors"><%= entry.title %></h3>
+      <% end %>
+      <% if entry.ai_summary.present? %>
+        <p class="text-xs text-gray-600 mt-1 line-clamp-2"><%= entry.ai_summary %></p>
+      <% end %>
+    </div>
+    <div id="entry_<%= entry.id %>_status" class="ml-3 shrink-0">
+      <%= render "entries/processing_status", entry: entry, status: entry.processing_status, message: nil %>
+    </div>
+  </div>
+
+  <% if entry.tags.any? %>
+    <div class="flex flex-wrap gap-1 mt-2">
+      <% entry.tags.limit(5).each do |tag| %>
+        <%= link_to tag.name, tag_path(tag.name),
+            class: "inline-block rounded-full px-2 py-0.5 text-xs bg-gray-100 text-gray-600 hover:bg-indigo-100 hover:text-indigo-700 transition-colors" %>
+      <% end %>
+      <% if entry.tags.size > 5 %>
+        <span class="text-xs text-gray-400">+<%= entry.tags.size - 5 %> more</span>
+      <% end %>
+    </div>
+  <% end %>
+</div>

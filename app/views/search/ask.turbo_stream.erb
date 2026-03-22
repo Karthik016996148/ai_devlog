@@ -1,0 +1,28 @@
+<%= turbo_stream.append "chat_messages" do %>
+  <!-- User Question -->
+  <div class="flex justify-end">
+    <div class="max-w-lg rounded-lg bg-indigo-600 px-4 py-3 text-white">
+      <p class="text-sm"><%= @question %></p>
+    </div>
+  </div>
+
+  <!-- AI Response placeholder -->
+  <div class="flex justify-start">
+    <div class="max-w-2xl rounded-lg bg-white border border-gray-200 px-4 py-3">
+      <p class="text-xs font-medium text-gray-500 mb-1">AI DevLog</p>
+      <div id="chat_<%= @chat.id %>_response" class="text-sm text-gray-800 prose prose-sm">
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<%= turbo_stream.replace "chat_#{@chat.id}_thinking" do %>
+  <div id="chat_<%= @chat.id %>_thinking" class="flex items-center gap-2 text-sm text-gray-500 py-2">
+    <span class="animate-pulse inline-flex gap-1">
+      <span class="h-2 w-2 rounded-full bg-gray-400 animate-bounce"></span>
+      <span class="h-2 w-2 rounded-full bg-gray-400 animate-bounce" style="animation-delay: 0.1s"></span>
+      <span class="h-2 w-2 rounded-full bg-gray-400 animate-bounce" style="animation-delay: 0.2s"></span>
+    </span>
+    <span>Searching knowledge base and generating response...</span>
+  </div>
+<% end %>

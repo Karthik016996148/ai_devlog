@@ -1,0 +1,7 @@
+<div class="max-w-3xl mx-auto">
+  <div class="mb-6">
+    <%= link_to "\u2190 Back to entry", entry_path(@entry), class: "text-sm text-indigo-600 hover:text-indigo-500 font-medium" %>
+  </div>
+  <h1 class="text-2xl font-bold text-gray-900 mb-6">Edit Entry</h1>
+  <%= render "form", entry: @entry %>
+</div>
