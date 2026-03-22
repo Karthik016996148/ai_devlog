@@ -69,5 +69,7 @@ class Entry < ApplicationRecord
 
   def enqueue_ai_processing
     EntryProcessingJob.perform_later(id)
+  rescue => e
+    Rails.logger.warn("Failed to enqueue processing for entry #{id}: #{e.message}")
   end
 end
