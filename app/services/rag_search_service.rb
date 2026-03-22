@@ -15,6 +15,7 @@ class RagSearchService
   PROMPT
 
   SIMILARITY_THRESHOLD = 0.2
+  MIN_KEYWORD_RELEVANCE = 3
 
   def initialize(chat)
     @chat = chat
@@ -42,8 +43,11 @@ class RagSearchService
     INSTRUCTIONS
 
     response = llm_chat.ask(question)
+    answer = response.content
 
-    { response: response.content, sources: relevant_entries }
+    cited_sources = filter_cited_sources(answer, relevant_entries)
+
+    { response: answer, sources: cited_sources }
   end
 
   def ask(question, &on_chunk)
@@ -68,8 +72,11 @@ class RagSearchService
     INSTRUCTIONS
 
     response = llm_chat.ask(question, &on_chunk)
+    answer = response.respond_to?(:content) ? response.content : response.to_s
 
-    { response: response, sources: relevant_entries }
+    cited_sources = filter_cited_sources(answer, relevant_entries)
+
+    { response: response, sources: cited_sources }
   end
 
   private
@@ -98,6 +105,10 @@ class RagSearchService
 
   def keyword_search(question)
     text_matches = Entry.keyword_search(question).limit(5).to_a
+    text_matches = text_matches.select do |e|
+      e.respond_to?(:keyword_relevance) && e.keyword_relevance.to_i >= MIN_KEYWORD_RELEVANCE
+    end
+
     tag_matches = tag_search(question)
     (text_matches + tag_matches).uniq(&:id).first(5)
   end
@@ -116,10 +127,22 @@ class RagSearchService
     both = vector_results.select { |e| both_ids.include?(e.id) }
     both.each { |e| seen_ids.add(e.id); merged << e }
 
-    vector_results.each { |e| next if seen_ids.include?(e.id); seen_ids.add(e.id); merged << e }
     keyword_results.each { |e| next if seen_ids.include?(e.id); seen_ids.add(e.id); merged << e }
+    vector_results.each { |e| next if seen_ids.include?(e.id); seen_ids.add(e.id); merged << e }
 
     merged.first(5)
+  end
+
+  def filter_cited_sources(answer, entries)
+    return entries if answer.include?("No matching entries found")
+
+    cited = entries.select do |entry|
+      title_words = entry.title.split(/\s+/).select { |w| w.length > 3 }
+      answer.include?(entry.title) ||
+        title_words.count { |w| answer.downcase.include?(w.downcase) } >= (title_words.size / 2.0).ceil
+    end
+
+    cited.any? ? cited : entries.first(1)
   end
 
   def build_context(entries)
