@@ -15,15 +15,13 @@ module Embeddable
     private
 
     def cosine_similarity_sql(query_vec)
-      # Cosine similarity computed via PostgreSQL JSONB array operations
-      # dot(a,b) / (norm(a) * norm(b))
       query_json = query_vec.to_json
       <<~SQL.squish
         (
           SELECT COALESCE(
-            SUM(a.val * b.val) /
+            SUM(a.val::float8 * b.val::float8) /
             NULLIF(
-              SQRT(SUM(a.val * a.val)) * SQRT(SUM(b.val * b.val)),
+              SQRT(SUM(a.val::float8 * a.val::float8)) * SQRT(SUM(b.val::float8 * b.val::float8)),
               0
             ),
             0
