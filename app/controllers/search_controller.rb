@@ -11,6 +11,7 @@ class SearchController < ApplicationController
 
     respond_to do |format|
       format.turbo_stream
+      format.html { redirect_to search_path }
     end
   end
 end
