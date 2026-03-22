@@ -1,6 +1,6 @@
 class SearchController < ApplicationController
   def index
-    @chat = Chat.create!
+    @chat = Chat.order(created_at: :desc).first || Chat.create!
   end
 
   def ask

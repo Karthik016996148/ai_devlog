@@ -14,7 +14,7 @@ class RagSearchService
     query_result = RubyLLM.embed(question, model: "text-embedding-3-small", provider: :openai, assume_model_exists: true)
     query_embedding = query_result.vectors
 
-    relevant_entries = Entry.processed.search_by_embedding(query_embedding, limit: 5)
+    relevant_entries = Entry.processed.search_by_embedding(query_embedding, limit: 5).includes(:tags)
 
     context = build_context(relevant_entries)
 
@@ -36,7 +36,7 @@ class RagSearchService
     query_result = RubyLLM.embed(question, model: "text-embedding-3-small", provider: :openai, assume_model_exists: true)
     query_embedding = query_result.vectors
 
-    relevant_entries = Entry.processed.search_by_embedding(query_embedding, limit: 5)
+    relevant_entries = Entry.processed.search_by_embedding(query_embedding, limit: 5).includes(:tags)
 
     context = build_context(relevant_entries)
 
@@ -66,7 +66,7 @@ class RagSearchService
 
         #{entry.content.truncate(1000)}
 
-        Tags: #{entry.tags.pluck(:name).join(", ")}
+        Tags: #{entry.tags.map(&:name).join(", ")}
         ---
       ENTRY
     end.join("\n")

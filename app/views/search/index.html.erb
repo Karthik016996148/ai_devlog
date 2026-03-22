@@ -5,8 +5,8 @@
   </div>
 
   <!-- Messages -->
-  <div id="chat_messages" class="space-y-4 min-h-[200px]">
-    <div class="text-center py-8 text-gray-400">
+  <div id="chat_messages" class="space-y-4 min-h-[200px] max-h-[60vh] overflow-y-auto">
+    <div id="chat_placeholder" class="text-center py-8 text-gray-400">
       <svg class="mx-auto h-10 w-10 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
       </svg>
@@ -17,7 +17,7 @@
   <!-- Question Form -->
   <div class="sticky bottom-6 bg-gray-50 pt-4">
     <%= form_with url: ask_search_path, method: :post,
-          data: { controller: "search-form", action: "submit->search-form#submit", turbo_submits_with: "Searching..." } do |f| %>
+          data: { controller: "search-form", action: "submit->search-form#submit" } do |f| %>
       <%= f.hidden_field :chat_id, value: @chat.id %>
       <div class="flex gap-3">
         <%= f.text_field :question,
