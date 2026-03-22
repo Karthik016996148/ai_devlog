@@ -182,3 +182,7 @@ Deployed on [Render.com](https://render.com) using the included `render.yaml` bl
 Required environment variables on Render:
 - `OPENAI_API_KEY`
 - `RAILS_MASTER_KEY`
+
+## Author
+
+**Karthik Nimmagadda** — [@Karthik016996148](https://github.com/Karthik016996148)
