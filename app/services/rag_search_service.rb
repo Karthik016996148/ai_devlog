@@ -40,22 +40,23 @@ class RagSearchService
   private
 
   def find_relevant_entries(question)
-    vector_hits = vector_search(question)
+    vector_ids = vector_search(question).map(&:id)
     keyword_hits = keyword_search(question)
+    keyword_ids = keyword_hits.map(&:id)
 
     seen = Set.new
-    merged = []
+    ordered_ids = []
 
-    (vector_hits & keyword_hits).each { |e| seen.add(e.id); merged << e }
+    both = keyword_ids & vector_ids
+    both.each { |id| seen.add(id); ordered_ids << id }
 
-    keyword_hits.each { |e| next if seen.include?(e.id); seen.add(e.id); merged << e }
-    vector_hits.each { |e| next if seen.include?(e.id); seen.add(e.id); merged << e }
+    keyword_ids.each { |id| next if seen.include?(id); seen.add(id); ordered_ids << id }
+    vector_ids.each { |id| next if seen.include?(id); seen.add(id); ordered_ids << id }
 
-    entries = merged.first(5)
-    return [] if entries.empty?
+    ordered_ids = ordered_ids.first(5)
+    return [] if ordered_ids.empty?
 
-    ids = entries.map(&:id)
-    Entry.where(id: ids).includes(:tags).index_by(&:id).values_at(*ids).compact
+    Entry.where(id: ordered_ids).includes(:tags).index_by(&:id).values_at(*ordered_ids).compact
   end
 
   def vector_search(question)
@@ -71,15 +72,18 @@ class RagSearchService
     words = question.strip.split(/\s+/).reject { |w| w.length < 3 }.uniq
     return [] if words.empty?
 
-    title_hits = Entry.processed.where(
-      words.map { "title ILIKE ?" }.join(" OR "),
-      *words.map { |w| "%#{Entry.sanitize_sql_like(w)}%" }
+    patterns = words.map { |w| "%#{Entry.sanitize_sql_like(w)}%" }
+
+    title_hits = Entry.where(
+      words.map { "title ILIKE ?" }.join(" OR "), *patterns
     ).limit(5).to_a
 
-    tag_hits = Entry.processed.joins(:tags).where(
-      "tags.name IN (?)",
-      words.map { |w| w.downcase.gsub(/[^a-z0-9\-]/, "") }
-    ).distinct.limit(3).to_a
+    tag_names = words.map { |w| w.downcase.gsub(/[^a-z0-9\-]/, "") }.reject(&:blank?)
+    tag_hits = if tag_names.any?
+      Entry.joins(:tags).where("tags.name IN (?)", tag_names).distinct.limit(3).to_a
+    else
+      []
+    end
 
     (title_hits + tag_hits).uniq(&:id)
   end
