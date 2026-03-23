@@ -222,17 +222,3 @@ Deployed on [Render.com](https://render.com) using the included `render.yaml` bl
 Required environment variables on Render:
 - `OPENAI_API_KEY`
 - `RAILS_MASTER_KEY`
-
-## Contributors
-
-<table>
-  <tr>
-    <td align="center">
-      <a href="https://github.com/Karthik016996148">
-        <b>Karthik</b>
-      </a>
-      <br />
-      <sub>Creator & Maintainer</sub>
-    </td>
-  </tr>
-</table>
