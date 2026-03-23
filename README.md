@@ -1,6 +1,6 @@
 # AI DevLog
 
-An AI-powered developer knowledge base built with Ruby on Rails. Paste code snippets, error logs, solutions, and notes — AI automatically summarizes, tags, embeds, and finds related entries. Search your knowledge base using RAG (Retrieval-Augmented Generation).
+An AI-powered developer knowledge base built with Ruby on Rails. Paste code snippets, error logs, solutions, and notes AI automatically summarizes, tags, embeds, and finds related entries. Search your knowledge base using RAG (Retrieval-Augmented Generation).
 
 **Live Demo:** [https://ai-devlog.onrender.com](https://ai-devlog.onrender.com)
 
@@ -12,8 +12,8 @@ Instead of losing solutions in browser bookmarks, Slack threads, or scattered no
 
 1. **Summarizes** each entry into a concise 1-2 sentence insight
 2. **Tags** entries with relevant technical terms (e.g., `postgresql`, `n+1-query`, `docker`)
-3. **Creates embeddings** — converts text into 1536-dimension vectors for semantic search
-4. **Finds related entries** — discovers connections between your past entries via cosine similarity
+3. **Creates embeddings** - converts text into 1536-dimension vectors for semantic search
+4. **Finds related entries** - discovers connections between your past entries via cosine similarity
 
 Then you can **search your entire knowledge base in natural language**. Ask "How did I fix the Docker OOM error?" and AI DevLog retrieves the exact entry you wrote, quotes it directly, and shows the source.
 
